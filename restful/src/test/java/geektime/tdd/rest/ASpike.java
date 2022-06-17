@@ -1,5 +1,11 @@
 package geektime.tdd.rest;
 
+import com.tdd.di.ComponentRef;
+import com.tdd.di.Config;
+import com.tdd.di.Context;
+import com.tdd.di.ContextConfig;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -92,17 +98,19 @@ public class ASpike {
 
     static class TestProviders implements Providers {
         private List<MessageBodyWriter> writers;
-        private Application application;
+        private TestApplication application;
 
-        public TestProviders(Application application) {
+        public TestProviders(TestApplication application) {
             this.application = application;
-            writers = (List<MessageBodyWriter>) this.application.getClasses().stream().filter(c -> MessageBodyWriter.class.isAssignableFrom(c)).map(c -> {
-                try {
-                    return c.getConstructor().newInstance();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }).toList();
+            ContextConfig config = new ContextConfig();
+            config.from(application.getConfig());
+            List<Class<?>> writerClasses = this.application.getClasses().stream().filter(c -> MessageBodyWriter.class.isAssignableFrom(c)).toList();
+
+            for (Class writerClass : writerClasses) {
+                config.component(writerClass, writerClass);
+            }
+            Context context = config.getContext();
+            writers = (List<MessageBodyWriter>) writerClasses.stream().map(c -> context.get(ComponentRef.of(c)).get()).toList();
         }
 
         @Override
@@ -130,6 +138,10 @@ public class ASpike {
         public StringMessageBodyWriter() {
         }
 
+        @Inject
+        @Named("prefix")
+        String prefix;
+
         @Override
         public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
             return type == String.class;
@@ -139,12 +151,20 @@ public class ASpike {
         public void writeTo(String s, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType,
                             MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException, WebApplicationException {
             PrintWriter writer = new PrintWriter(entityStream);
+            writer.write(prefix);
             writer.write(s);
             writer.flush();
         }
     }
 
     static class TestApplication extends Application {
+        public Config getConfig() {
+            return new Config() {
+                @Named("prefix")
+                public String name = "prefix";
+            };
+        }
+
         @Override
         public Set<Class<?>> getClasses() {
             return Set.of(TestResource.class, StringMessageBodyWriter.class);
@@ -168,6 +188,6 @@ public class ASpike {
         HttpRequest request = HttpRequest.newBuilder(new URI("http://localhost:8080/hello/world")).GET().build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("response.body() = " + response.body());
-        assertEquals("Hello World!", response.body());
+        assertEquals("prefixHello World!", response.body());
     }
 }
