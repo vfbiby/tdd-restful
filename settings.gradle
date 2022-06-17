@@ -1,2 +1,3 @@
 rootProject.name = 'tdd-framework'
 include 'restful'
+include 'DiContainer'
