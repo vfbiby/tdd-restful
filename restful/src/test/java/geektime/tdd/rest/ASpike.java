@@ -71,13 +71,7 @@ public class ASpike {
         public ResourceServlet(TestApplication application, Providers providers) {
             this.application = application;
             this.providers = providers;
-            ContextConfig config = new ContextConfig();
-            config.from(application.getConfig());
-            List<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class)).toList();
-            for (Class rootResource : rootResources) {
-                config.component(rootResource, rootResource);
-            }
-            context = config.getContext();
+            context = application.getContext();
         }
 
         Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources) throws NoSuchMethodException {
@@ -110,14 +104,8 @@ public class ASpike {
 
         public TestProviders(TestApplication application) {
             this.application = application;
-            ContextConfig config = new ContextConfig();
-            config.from(application.getConfig());
             List<Class<?>> writerClasses = this.application.getClasses().stream().filter(c -> MessageBodyWriter.class.isAssignableFrom(c)).toList();
-
-            for (Class writerClass : writerClasses) {
-                config.component(writerClass, writerClass);
-            }
-            Context context = config.getContext();
+            Context context = application.getContext();
             writers = (List<MessageBodyWriter>) writerClasses.stream().map(c -> context.get(ComponentRef.of(c)).get()).toList();
         }
 
@@ -166,6 +154,30 @@ public class ASpike {
     }
 
     static class TestApplication extends Application {
+
+        private final Context context;
+
+        public Context getContext() {
+            return context;
+        }
+
+        public TestApplication() {
+            ContextConfig config = new ContextConfig();
+            config.from(getConfig());
+
+            List<Class<?>> writerClasses = this.getClasses().stream().filter(c -> MessageBodyWriter.class.isAssignableFrom(c)).toList();
+
+            for (Class writerClass : writerClasses) {
+                config.component(writerClass, writerClass);
+            }
+
+            List<Class<?>> rootResources = this.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class)).toList();
+            for (Class rootResource : rootResources) {
+                config.component(rootResource, rootResource);
+            }
+            context = config.getContext();
+        }
+
         public Config getConfig() {
             return new Config() {
                 @Named("prefix")
