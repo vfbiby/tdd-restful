@@ -64,18 +64,26 @@ public class ASpike {
     }
 
     static class ResourceServlet extends HttpServlet {
-        private Application application;
+        private final Context context;
+        private TestApplication application;
         private Providers providers;
 
-        public ResourceServlet(Application application, Providers providers) {
+        public ResourceServlet(TestApplication application, Providers providers) {
             this.application = application;
             this.providers = providers;
+            ContextConfig config = new ContextConfig();
+            config.from(application.getConfig());
+            List<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class)).toList();
+            for (Class rootResource : rootResources) {
+                config.component(rootResource, rootResource);
+            }
+            context = config.getContext();
         }
 
         Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources) throws NoSuchMethodException {
             try {
                 Class<?> rootClass = rootResources.findFirst().get();
-                Object rootResource = rootClass.getConstructor().newInstance();
+                Object rootResource = context.get(ComponentRef.of(rootClass)).get();
                 Method method = Arrays.stream(rootClass.getMethods()).filter(m -> m.isAnnotationPresent(GET.class)).findFirst().get();
                 return method.invoke(rootResource);
             } catch (Exception e) {
