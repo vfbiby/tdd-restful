@@ -1,6 +1,5 @@
 package geektime.tdd.rest;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -68,13 +66,9 @@ public class ASpike {
             this.providers = providers;
         }
 
-        public ResourceServlet(Application application) {
-            this.application = application;
-        }
-
         Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources) throws NoSuchMethodException {
-            Class<?> rootClass = rootResources.findFirst().get();
             try {
+                Class<?> rootClass = rootResources.findFirst().get();
                 Object rootResource = rootClass.getConstructor().newInstance();
                 Method method = Arrays.stream(rootClass.getMethods()).filter(m -> m.isAnnotationPresent(GET.class)).findFirst().get();
                 return method.invoke(rootResource);
@@ -85,15 +79,14 @@ public class ASpike {
 
         @Override
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            Stream<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class));
-            Object result = null;
             try {
-                result = dispatch(req, rootResources);
+                Stream<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class));
+                Object result = dispatch(req, rootResources);
+                MessageBodyWriter<Object> writer = (MessageBodyWriter<Object>) providers.getMessageBodyWriter(result.getClass(), null, null, null);
+                writer.writeTo(result, null, null, null, null, null, resp.getOutputStream());
             } catch (NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
-            resp.getWriter().write(result.toString());
-            resp.getWriter().flush();
         }
     }
 
