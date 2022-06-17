@@ -11,7 +11,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ResourceContext;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -74,10 +76,10 @@ public class ASpike {
             context = application.getContext();
         }
 
-        Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources) throws NoSuchMethodException {
+        Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources, ResourceContext rc) throws NoSuchMethodException {
             try {
                 Class<?> rootClass = rootResources.findFirst().get();
-                Object rootResource = context.get(ComponentRef.of(rootClass)).get();
+                Object rootResource = rc.initResource(context.get(ComponentRef.of(rootClass)).get());
                 Method method = Arrays.stream(rootClass.getMethods()).filter(m -> m.isAnnotationPresent(GET.class)).findFirst().get();
                 return method.invoke(rootResource);
             } catch (Exception e) {
@@ -89,7 +91,8 @@ public class ASpike {
         protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             try {
                 Stream<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class));
-                Object result = dispatch(req, rootResources);
+                ResourceContext rc = application.createResourceContext(req, resp);
+                Object result = dispatch(req, rootResources, rc);
                 MessageBodyWriter<Object> writer = (MessageBodyWriter<Object>) providers.getMessageBodyWriter(result.getClass(), null, null, null);
                 writer.writeTo(result, null, null, null, null, null, resp.getOutputStream());
             } catch (NoSuchMethodException e) {
@@ -155,7 +158,21 @@ public class ASpike {
 
     static class TestApplication extends Application {
 
-        private final Context context;
+        private Context context;
+
+        public ResourceContext createResourceContext(HttpServletRequest request, HttpServletResponse response) {
+            return new ResourceContext() {
+                @Override
+                public <T> T getResource(Class<T> resourceClass) {
+                    return null;
+                }
+
+                @Override
+                public <T> T initResource(T resource) {
+                    return resource;
+                }
+            };
+        }
 
         public Context getContext() {
             return context;
@@ -195,6 +212,9 @@ public class ASpike {
     static class TestResource {
         public TestResource() {
         }
+
+        @QueryParam("q")
+        String q;
 
         @Inject
         @Named("prefix")
