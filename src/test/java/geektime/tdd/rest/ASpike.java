@@ -16,12 +16,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,10 +56,27 @@ public class ASpike {
             this.application = application;
         }
 
+        Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources) throws NoSuchMethodException {
+            Class<?> rootClass = rootResources.findFirst().get();
+            try {
+                Object rootResource = rootClass.getConstructor().newInstance();
+                Method method = Arrays.stream(rootClass.getMethods()).filter(m -> m.isAnnotationPresent(GET.class)).findFirst().get();
+                return method.invoke(rootResource);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-            String result = new TestResource().get();
-            resp.getWriter().write(result);
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            Stream<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class));
+            Object result = null;
+            try {
+                result = dispatch(req, rootResources);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+            resp.getWriter().write(result.toString());
             resp.getWriter().flush();
         }
     }
@@ -69,6 +90,9 @@ public class ASpike {
 
     @Path("/hello")
     static class TestResource {
+        public TestResource() {
+        }
+
         @GET
         public String get() {
             return "Hello World!";
