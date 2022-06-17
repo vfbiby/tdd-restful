@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Application;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -20,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,14 +35,7 @@ public class ASpike {
         ServerConnector connector = new ServerConnector(server);
         server.addConnector(connector);
         ServletContextHandler handler = new ServletContextHandler(server, "/hello");
-        handler.addServlet(new ServletHolder(new HttpServlet() {
-            @Override
-            protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-                String result = new TestResource().get();
-                resp.getWriter().write(result);
-                resp.getWriter().flush();
-            }
-        }), "/world");
+        handler.addServlet(new ServletHolder(new ResourceServlet(new TestApplication())), "/world");
         server.setHandler(handler);
         server.start();
     }
@@ -48,6 +43,28 @@ public class ASpike {
     @AfterEach
     public void stop() throws Exception {
         server.stop();
+    }
+
+    static class ResourceServlet extends HttpServlet {
+        private Application application;
+
+        public ResourceServlet(Application application) {
+            this.application = application;
+        }
+
+        @Override
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+            String result = new TestResource().get();
+            resp.getWriter().write(result);
+            resp.getWriter().flush();
+        }
+    }
+
+    static class TestApplication extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return Set.of(TestResource.class);
+        }
     }
 
     @Path("/hello")

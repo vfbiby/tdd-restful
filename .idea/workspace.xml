@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7325f55e-dad9-47fe-9d2e-c847e320103a" name="Changes" comment="a basic servlet http server implementation with simple test.">
+    <list default="true" id="7325f55e-dad9-47fe-9d2e-c847e320103a" name="Changes" comment="use a TestResource to replace direct output &quot;Hello World!&quot;.">
       <change beforePath="$PROJECT_DIR$/src/test/java/geektime/tdd/rest/ASpike.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/geektime/tdd/rest/ASpike.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -75,7 +75,21 @@
       <option name="project" value="LOCAL" />
       <updated>1655424269060</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="a basic servlet http server implementation with simple test.">
+      <created>1655424545017</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1655424545017</updated>
+    </task>
+    <task id="LOCAL-00003" summary="use a TestResource to replace direct output &quot;Hello World!&quot;.">
+      <created>1655424783553</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1655424783553</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -91,6 +105,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="a basic servlet http server implementation with simple test." />
-    <option name="LAST_COMMIT_MESSAGE" value="a basic servlet http server implementation with simple test." />
+    <MESSAGE value="use a TestResource to replace direct output &quot;Hello World!&quot;." />
+    <option name="LAST_COMMIT_MESSAGE" value="use a TestResource to replace direct output &quot;Hello World!&quot;." />
   </component>
 </project>
