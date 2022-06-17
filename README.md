@@ -1,3 +1,3 @@
 # tdd-restful
 
-I write a lot manually under doc dir!
+There are many manually under doc dir!
