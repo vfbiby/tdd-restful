@@ -184,9 +184,13 @@ public class ASpike {
         public TestResource() {
         }
 
+        @Inject
+        @Named("prefix")
+        String prefix;
+
         @GET
         public String get() {
-            return "Hello World!";
+            return prefix + "Hello World!";
         }
     }
 
@@ -196,6 +200,6 @@ public class ASpike {
         HttpRequest request = HttpRequest.newBuilder(new URI("http://localhost:8080/hello/world")).GET().build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("response.body() = " + response.body());
-        assertEquals("prefixHello World!", response.body());
+        assertEquals("prefixprefixHello World!", response.body());
     }
 }
