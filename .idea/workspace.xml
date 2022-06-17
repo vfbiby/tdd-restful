@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7325f55e-dad9-47fe-9d2e-c847e320103a" name="Changes" comment="Refactor to use ResourceServlet to output &quot;Hello World!&quot;.">
+    <list default="true" id="7325f55e-dad9-47fe-9d2e-c847e320103a" name="Changes" comment="Refactor to use dispatch in ResourceServlet to output &quot;Hello World!&quot;.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/geektime/tdd/rest/ASpike.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/geektime/tdd/rest/ASpike.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -96,7 +97,21 @@
       <option name="project" value="LOCAL" />
       <updated>1655425075853</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Refactor to use dispatch in ResourceServlet to output &quot;Hello World!&quot;.">
+      <created>1655425730796</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1655425730796</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Refactor to use dispatch in ResourceServlet to output &quot;Hello World!&quot;.">
+      <created>1655425765029</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1655425765029</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -114,6 +129,7 @@
     <MESSAGE value="a basic servlet http server implementation with simple test." />
     <MESSAGE value="use a TestResource to replace direct output &quot;Hello World!&quot;." />
     <MESSAGE value="Refactor to use ResourceServlet to output &quot;Hello World!&quot;." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor to use ResourceServlet to output &quot;Hello World!&quot;." />
+    <MESSAGE value="Refactor to use dispatch in ResourceServlet to output &quot;Hello World!&quot;." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor to use dispatch in ResourceServlet to output &quot;Hello World!&quot;." />
   </component>
 </project>
