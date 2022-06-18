@@ -9,14 +9,9 @@ import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ResourceContext;
-import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.*;
 import jakarta.ws.rs.ext.*;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -37,9 +32,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,15 +69,163 @@ public class ASpike {
             context = application.getContext();
         }
 
-        Object dispatch(HttpServletRequest req, Stream<Class<?>> rootResources, ResourceContext rc) throws NoSuchMethodException {
+        OutboundResponse dispatch(HttpServletRequest req, Stream<Class<?>> rootResources, ResourceContext rc) throws NoSuchMethodException {
             try {
                 Class<?> rootClass = rootResources.findFirst().get();
                 Object rootResource = rc.initResource(context.get(ComponentRef.of(rootClass)).get());
                 Method method = Arrays.stream(rootClass.getMethods()).filter(m -> m.isAnnotationPresent(GET.class)).findFirst().get();
-                return method.invoke(rootResource);
+                Object result = method.invoke(rootResource);
+                GenericEntity entity = new GenericEntity<>(result, method.getGenericReturnType());
+                return new OutboundResponse() {
+                    @Override
+                    GenericEntity getGenericEntity() {
+                        return entity;
+                    }
+
+                    @Override
+                    Annotation[] getAnnotations() {
+                        return new Annotation[0];
+                    }
+
+                    @Override
+                    public int getStatus() {
+                        return 0;
+                    }
+
+                    @Override
+                    public StatusType getStatusInfo() {
+                        return null;
+                    }
+
+                    @Override
+                    public Object getEntity() {
+                        return entity;
+                    }
+
+                    @Override
+                    public <T> T readEntity(Class<T> entityType) {
+                        return null;
+                    }
+
+                    @Override
+                    public <T> T readEntity(GenericType<T> entityType) {
+                        return null;
+                    }
+
+                    @Override
+                    public <T> T readEntity(Class<T> entityType, Annotation[] annotations) {
+                        return null;
+                    }
+
+                    @Override
+                    public <T> T readEntity(GenericType<T> entityType, Annotation[] annotations) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasEntity() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean bufferEntity() {
+                        return false;
+                    }
+
+                    @Override
+                    public void close() {
+
+                    }
+
+                    @Override
+                    public MediaType getMediaType() {
+                        return null;
+                    }
+
+                    @Override
+                    public Locale getLanguage() {
+                        return null;
+                    }
+
+                    @Override
+                    public int getLength() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Set<String> getAllowedMethods() {
+                        return null;
+                    }
+
+                    @Override
+                    public Map<String, NewCookie> getCookies() {
+                        return null;
+                    }
+
+                    @Override
+                    public EntityTag getEntityTag() {
+                        return null;
+                    }
+
+                    @Override
+                    public Date getDate() {
+                        return null;
+                    }
+
+                    @Override
+                    public Date getLastModified() {
+                        return null;
+                    }
+
+                    @Override
+                    public URI getLocation() {
+                        return null;
+                    }
+
+                    @Override
+                    public Set<Link> getLinks() {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasLink(String relation) {
+                        return false;
+                    }
+
+                    @Override
+                    public Link getLink(String relation) {
+                        return null;
+                    }
+
+                    @Override
+                    public Link.Builder getLinkBuilder(String relation) {
+                        return null;
+                    }
+
+                    @Override
+                    public MultivaluedMap<String, Object> getMetadata() {
+                        return null;
+                    }
+
+                    @Override
+                    public MultivaluedMap<String, String> getStringHeaders() {
+                        return null;
+                    }
+
+                    @Override
+                    public String getHeaderString(String name) {
+                        return null;
+                    }
+                };
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        static abstract class OutboundResponse extends Response {
+            abstract GenericEntity getGenericEntity();
+
+            abstract Annotation[] getAnnotations();
         }
 
         @Override
@@ -92,9 +233,10 @@ public class ASpike {
             try {
                 Stream<Class<?>> rootResources = application.getClasses().stream().filter(c -> c.isAnnotationPresent(Path.class));
                 ResourceContext rc = application.createResourceContext(req, resp);
-                Object result = dispatch(req, rootResources, rc);
-                MessageBodyWriter<Object> writer = (MessageBodyWriter<Object>) providers.getMessageBodyWriter(result.getClass(), null, null, null);
-                writer.writeTo(result, null, null, null, null, null, resp.getOutputStream());
+                OutboundResponse result = dispatch(req, rootResources, rc);
+                GenericEntity entity = (GenericEntity) result.getEntity();
+                MessageBodyWriter<Object> writer = (MessageBodyWriter<Object>) providers.getMessageBodyWriter(entity.getRawType(), entity.getType(), result.getAnnotations(), result.getMediaType());
+                writer.writeTo(result, entity.getRawType(), entity.getType(), result.getAnnotations(), result.getMediaType(), result.getHeaders(), resp.getOutputStream());
             } catch (NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
@@ -208,6 +350,7 @@ public class ASpike {
         }
     }
 
+    //status code, media type, headers, body
     @Path("/not-in-use-path")
     static class TestResource {
         public TestResource() {
@@ -221,8 +364,33 @@ public class ASpike {
         String prefix;
 
         @GET
+        @Produces(MediaType.TEXT_PLAIN)
         public String get() {
             return prefix + "Hello World!";
+        }
+
+        @GET
+        @Path("/with-headers")
+        public Response withHeaders() {
+            return Response.ok().header("Set-Cookie", new NewCookie.Builder("SESSION_ID")
+                    .value("SID").build()).entity("string", new Annotation[0]).build();
+        }
+
+        @GET
+        @Path("/generic")
+        public GenericEntity<List<String>> generic() {
+            return new GenericEntity<>(List.of("abc", "def")) {
+            };
+        }
+
+        @GET
+        @Path("/pojo-generic")
+        public List<String> pojoGeneric() {
+            return List.of("abc", "def");
+        }
+
+        @PUT
+        public void update() {
         }
     }
 
