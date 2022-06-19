@@ -1,5 +1,6 @@
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'jacoco'
 }
 
 group 'com.carlnk'
@@ -12,6 +13,7 @@ repositories {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    testImplementation('org.mockito:mockito-core:4.6.1')
 
     implementation 'org.eclipse.jetty:jetty-server:11.0.9'
     implementation 'org.eclipse.jetty:jetty-servlet:11.0.9'
@@ -24,4 +26,8 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+java{
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
