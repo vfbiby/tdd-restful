@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.RuntimeDelegate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -36,24 +37,8 @@ public class ResourceServletTest extends ServletTest {
         return new ResourceServlet(runtime);
     }
 
-    // use status code as http status
-    @Test
-    @DisplayName("should use status from response")
-    public void should_use_status_from_response() throws Exception {
-        OutboundResponse response = mock(OutboundResponse.class);
-        when(response.getStatus()).thenReturn(Response.Status.NOT_MODIFIED.getStatusCode());
-        when(router.dispatch(any(), eq(resourceContext))).thenReturn(response);
-        when(response.getHeaders()).thenReturn(new MultivaluedHashMap<>());
-        HttpResponse<String> httpResponse = get("/hello/world");
-        assertEquals(Response.Status.NOT_MODIFIED.getStatusCode(), httpResponse.statusCode());
-    }
-
-    // use headers as http headers
-    @Test
-    @DisplayName("should use http headers from response")
-    public void should_use_http_headers_from_response() throws Exception {
-        OutboundResponse response = mock(OutboundResponse.class);
-        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+    @BeforeEach
+    public void before() {
         RuntimeDelegate delegate = mock(RuntimeDelegate.class);
         RuntimeDelegate.setInstance(delegate);
 
@@ -68,18 +53,38 @@ public class ResourceServletTest extends ServletTest {
                 return value.getName() + "=" + value.getValue();
             }
         });
+    }
 
-        NewCookie sessionId = new NewCookie.Builder("SESSION_ID").value("session").build();
-        NewCookie userId = new NewCookie.Builder("USER_ID").value("user").build();
-        headers.addAll("Set-Cookie", sessionId, userId);
+    // use status code as http status
+    @Test
+    @DisplayName("should use status from response")
+    public void should_use_status_from_response() throws Exception {
+        response(Response.Status.NOT_MODIFIED, new MultivaluedHashMap<>());
+        HttpResponse<String> httpResponse = get("/hello/world");
+        assertEquals(Response.Status.NOT_MODIFIED.getStatusCode(), httpResponse.statusCode());
+    }
 
-        when(response.getStatus()).thenReturn(Response.Status.NOT_MODIFIED.getStatusCode());
-        when(response.getHeaders()).thenReturn(headers);
-        when(router.dispatch(any(), eq(resourceContext))).thenReturn(response);
+    // use headers as http headers
+    @Test
+    @DisplayName("should use http headers from response")
+    public void should_use_http_headers_from_response() throws Exception {
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+
+        headers.addAll("Set-Cookie", new NewCookie.Builder("SESSION_ID").value("session").build(),
+                new NewCookie.Builder("USER_ID").value("user").build());
+
+        response(Response.Status.NOT_MODIFIED, headers);
 
         HttpResponse<String> httpResponse = get("/hello/world");
         assertArrayEquals(new String[]{"SESSION_ID=session", "USER_ID=user"},
                 httpResponse.headers().allValues("Set-Cookie").toArray(String[]::new));
+    }
+
+    private void response(Response.Status status, MultivaluedMap<String, Object> headers) {
+        OutboundResponse response = mock(OutboundResponse.class);
+        when(response.getStatus()).thenReturn(status.getStatusCode());
+        when(response.getHeaders()).thenReturn(headers);
+        when(router.dispatch(any(), eq(resourceContext))).thenReturn(response);
     }
 
     // TODO: 2022/6/19 writer body using MessageBodyWriter
