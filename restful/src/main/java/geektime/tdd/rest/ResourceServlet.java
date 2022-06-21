@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.GenericEntity;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
@@ -23,7 +24,12 @@ public class ResourceServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ResourceRouter router = runtime.getResourceRouter();
         Providers providers = runtime.getProviders();
-        OutboundResponse response = router.dispatch(req, runtime.createResourceContext(req, resp));
+        OutboundResponse response;
+        try {
+            response = router.dispatch(req, runtime.createResourceContext(req, resp));
+        } catch (WebApplicationException exception) {
+            response = (OutboundResponse) exception.getResponse();
+        }
         resp.setStatus(response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();
         for (String name : headers.keySet()) {
