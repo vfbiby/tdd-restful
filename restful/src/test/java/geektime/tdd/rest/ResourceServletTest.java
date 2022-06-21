@@ -4,6 +4,7 @@ import jakarta.servlet.Servlet;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ResourceContext;
 import jakarta.ws.rs.core.*;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Providers;
 import jakarta.ws.rs.ext.RuntimeDelegate;
@@ -97,7 +98,7 @@ public class ResourceServletTest extends ServletTest {
         assertEquals("entity", httpResponse.body());
     }
 
-    // TODO: 2022/6/19 throw WebApplicationException with response, use response
+    // throw WebApplicationException with response, use response
     @Test
     @DisplayName("should use response from web application exception")
     public void should_use_response_from_web_application_exception() throws Exception {
@@ -111,9 +112,18 @@ public class ResourceServletTest extends ServletTest {
         assertEquals("error", httpResponse.body());
     }
 
-    // TODO: 2022/6/19 throw WebApplicationException with null response, use ExceptionMapper build response
     // TODO: 2022/6/19 throw other exception, use ExceptionMapper build response
+    @Test
+    @DisplayName("should build response by exception mapper if null response from web application exception")
+    public void should_build_response_by_exception_mapper_if_null_response_from_web_application_exception() throws Exception {
+        when(router.dispatch(any(), eq(resourceContext))).thenThrow(RuntimeException.class);
+        when(providers.getExceptionMapper(eq(RuntimeException.class))).thenReturn(exception -> response.status(Response.Status.FORBIDDEN).build());
+        HttpResponse<String> httpResponse = get("/hello/world");
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), httpResponse.statusCode());
+    }
+
     // TODO: 2022/6/19 500 if MessageBodyWriter not found
+    // TODO: 2022/6/21 entity is null, ignore MessageBodyWriter
 
     class OutboundResponseBuilder {
         Response.Status status = Response.Status.OK;
@@ -143,6 +153,11 @@ public class ResourceServletTest extends ServletTest {
         }
 
         public void build(Consumer<OutboundResponse> consumer) {
+            OutboundResponse response = build();
+            consumer.accept(response);
+        }
+
+        private OutboundResponse build() {
             OutboundResponse response = mock(OutboundResponse.class);
             when(response.getStatus()).thenReturn(status.getStatusCode());
             when(response.getStatusInfo()).thenReturn(status);
@@ -150,8 +165,11 @@ public class ResourceServletTest extends ServletTest {
             when(response.getGenericEntity()).thenReturn(entity);
             when(response.getAnnotations()).thenReturn(annotations);
             when(response.getMediaType()).thenReturn(mediaType);
+            stubMessageBodyWriter();
+            return response;
+        }
 
-            consumer.accept(response);
+        private void stubMessageBodyWriter() {
             when(providers.getMessageBodyWriter(eq(String.class), eq(String.class), same(annotations), eq(mediaType))).thenReturn(new MessageBodyWriter<>() {
                 @Override
                 public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
