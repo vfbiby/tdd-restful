@@ -32,8 +32,12 @@ public class ResourceServlet extends HttpServlet {
         } catch (WebApplicationException exception) {
             response = (OutboundResponse) exception.getResponse();
         } catch (Throwable throwable) {
-            ExceptionMapper mapper = providers.getExceptionMapper(throwable.getClass());
-            response = (OutboundResponse) mapper.toResponse(throwable);
+            try {
+                ExceptionMapper mapper = providers.getExceptionMapper(throwable.getClass());
+                response = (OutboundResponse) mapper.toResponse(throwable);
+            } catch (WebApplicationException exception) {
+                response = (OutboundResponse) exception.getResponse();
+            }
         }
         resp.setStatus(response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();

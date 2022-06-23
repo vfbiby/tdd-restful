@@ -137,6 +137,17 @@ public class ResourceServletTest extends ServletTest {
     // TODO: 2022/6/22 500 if exception mapper
 
     // TODO: 2022/6/22 exception mapper
+    @Test
+    @DisplayName("should use response from web application exception thrown by exception mapper")
+    public void should_use_response_from_web_application_exception_thrown_by_exception_mapper() throws Exception {
+        when(router.dispatch(any(), eq(resourceContext))).thenThrow(RuntimeException.class);
+        when(providers.getExceptionMapper(eq(RuntimeException.class))).thenReturn(exception -> {
+            throw new WebApplicationException(response.status(Response.Status.FORBIDDEN).build());
+        });
+        HttpResponse<String> httpResponse = get("/hello/world");
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), httpResponse.statusCode());
+    }
+
     // TODO: 2022/6/22 providers gets exception mapper
     // TODO: 2022/6/22 runtime delegate
     // TODO: 2022/6/22 header delegate
