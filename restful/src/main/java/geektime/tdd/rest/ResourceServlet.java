@@ -1,6 +1,5 @@
 package geektime.tdd.rest;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,6 +12,7 @@ import jakarta.ws.rs.ext.Providers;
 import jakarta.ws.rs.ext.RuntimeDelegate;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 public class ResourceServlet extends HttpServlet {
     private Runtime runtime;
@@ -24,22 +24,21 @@ public class ResourceServlet extends HttpServlet {
     }
 
     @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void service(HttpServletRequest req, HttpServletResponse resp) {
         ResourceRouter router = runtime.getResourceRouter();
+        respond(resp, () -> router.dispatch(req, runtime.createResourceContext(req, resp)));
+    }
+
+    private void respond(HttpServletResponse resp, Supplier<OutboundResponse> supplier) {
         try {
-            respond(resp, router.dispatch(req, runtime.createResourceContext(req, resp)));
+            respond(resp, supplier.get());
         } catch (WebApplicationException exception) {
-            respond(resp, (OutboundResponse) exception.getResponse());
+            respond(resp, () -> (OutboundResponse) exception.getResponse());
         } catch (Throwable throwable) {
-            try {
+            respond(resp, () -> {
                 ExceptionMapper mapper = providers.getExceptionMapper(throwable.getClass());
-                respond(resp, (OutboundResponse) mapper.toResponse(throwable));
-            } catch (WebApplicationException exception) {
-                respond(resp, (OutboundResponse) exception.getResponse());
-            } catch (Throwable throwable1) {
-                ExceptionMapper mapper = providers.getExceptionMapper(throwable1.getClass());
-                respond(resp, (OutboundResponse) mapper.toResponse(throwable1));
-            }
+                return (OutboundResponse) mapper.toResponse(throwable);
+            });
         }
     }
 
