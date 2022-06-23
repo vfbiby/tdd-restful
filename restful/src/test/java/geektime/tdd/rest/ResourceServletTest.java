@@ -112,7 +112,7 @@ public class ResourceServletTest extends ServletTest {
         assertEquals("error", httpResponse.body());
     }
 
-    // TODO: 2022/6/19 throw other exception, use ExceptionMapper build response
+    // throw other exception, use ExceptionMapper build response
     @Test
     @DisplayName("should build response by exception mapper if null response from web application exception")
     public void should_build_response_by_exception_mapper_if_null_response_from_web_application_exception() throws Exception {
@@ -122,11 +122,20 @@ public class ResourceServletTest extends ServletTest {
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), httpResponse.statusCode());
     }
 
+    // entity is null, ignore MessageBodyWriter
+    @Test
+    @DisplayName("should not call message body writer if entity is null")
+    public void should_not_call_message_body_writer_if_entity_is_null() throws Exception {
+        response.entity(null, new Annotation[0]).returnFrom(router);
+        HttpResponse<String> httpResponse = get("/hello/world");
+        assertEquals(Response.Status.OK.getStatusCode(), httpResponse.statusCode());
+        assertEquals("", httpResponse.body());
+    }
+
     // TODO: 2022/6/19 500 if MessageBodyWriter not found
     // TODO: 2022/6/22 500 if header delegate
     // TODO: 2022/6/22 500 if exception mapper
 
-    // TODO: 2022/6/21 entity is null, ignore MessageBodyWriter
     // TODO: 2022/6/22 exception mapper
     // TODO: 2022/6/22 providers gets exception mapper
     // TODO: 2022/6/22 runtime delegate

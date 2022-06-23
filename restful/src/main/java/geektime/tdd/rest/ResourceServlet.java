@@ -31,7 +31,7 @@ public class ResourceServlet extends HttpServlet {
             response = router.dispatch(req, runtime.createResourceContext(req, resp));
         } catch (WebApplicationException exception) {
             response = (OutboundResponse) exception.getResponse();
-        }catch (Throwable throwable){
+        } catch (Throwable throwable) {
             ExceptionMapper mapper = providers.getExceptionMapper(throwable.getClass());
             response = (OutboundResponse) mapper.toResponse(throwable);
         }
@@ -44,7 +44,9 @@ public class ResourceServlet extends HttpServlet {
             }
         }
         GenericEntity entity = response.getGenericEntity();
-        MessageBodyWriter writer = providers.getMessageBodyWriter(entity.getRawType(), entity.getType(), response.getAnnotations(), response.getMediaType());
-        writer.writeTo(entity.getEntity(), entity.getRawType(), entity.getType(), response.getAnnotations(), response.getMediaType(), response.getHeaders(), resp.getOutputStream());
+        if (entity != null) {
+            MessageBodyWriter writer = providers.getMessageBodyWriter(entity.getRawType(), entity.getType(), response.getAnnotations(), response.getMediaType());
+            writer.writeTo(entity.getEntity(), entity.getRawType(), entity.getType(), response.getAnnotations(), response.getMediaType(), response.getHeaders(), resp.getOutputStream());
+        }
     }
 }
