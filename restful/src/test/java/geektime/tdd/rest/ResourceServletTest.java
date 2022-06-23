@@ -123,7 +123,16 @@ public class ResourceServletTest extends ServletTest {
     }
 
     // TODO: 2022/6/19 500 if MessageBodyWriter not found
+    // TODO: 2022/6/22 500 if header delegate
+    // TODO: 2022/6/22 500 if exception mapper
+
     // TODO: 2022/6/21 entity is null, ignore MessageBodyWriter
+    // TODO: 2022/6/22 exception mapper
+    // TODO: 2022/6/22 providers gets exception mapper
+    // TODO: 2022/6/22 runtime delegate
+    // TODO: 2022/6/22 header delegate
+    // TODO: 2022/6/22 providers gets message body writer
+    // TODO: 2022/6/22 message body writer write
 
     class OutboundResponseBuilder {
         Response.Status status = Response.Status.OK;
