@@ -148,6 +148,19 @@ public class ResourceServletTest extends ServletTest {
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), httpResponse.statusCode());
     }
 
+    @Test
+    @DisplayName("should map exception thrown by exception mapper")
+    public void should_map_exception_thrown_by_exception_mapper() throws Exception {
+        when(router.dispatch(any(), eq(resourceContext))).thenThrow(RuntimeException.class);
+        when(providers.getExceptionMapper(eq(RuntimeException.class))).thenReturn(exception -> {
+            throw new IllegalArgumentException();
+        });
+        when(providers.getExceptionMapper(eq(IllegalArgumentException.class))).thenReturn(
+                exception -> response.status(Response.Status.FORBIDDEN).build());
+        HttpResponse<String> httpResponse = get("/hello/world");
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), httpResponse.statusCode());
+    }
+
     // TODO: 2022/6/22 providers gets exception mapper
     // TODO: 2022/6/22 runtime delegate
     // TODO: 2022/6/22 header delegate
